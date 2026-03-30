@@ -21,8 +21,8 @@ define('DB_NAME', 'grantgates');
 |--------------------------------------------------------------------------
 */
 define('SITE_NAME', 'GrantGates');
-define('BASE_URL', '/scholarship/');
-define('SITE_URL', 'http://localhost/scholarship/');
+define('BASE_URL', '/grantgates/');
+define('SITE_URL', 'http://localhost/grantgates/');
 
 /*
 |--------------------------------------------------------------------------

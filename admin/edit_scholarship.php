@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deadline = trim($_POST['deadline'] ?? '');
     $status = trim($_POST['status'] ?? 'active');
 
-    $allowed_statuses = ['active', 'expired'];
+    $allowed_statuses = ['active', 'expired', 'draft'];
 
     if ($title === '' || $description === '') {
         $error = 'Title and description are required.';
@@ -175,6 +175,9 @@ include '../includes/header.php';
                             </option>
                             <option value="expired" <?php echo (($scholarship['status'] ?? '') === 'expired') ? 'selected' : ''; ?>>
                                 Expired
+                            </option>
+                            <option value="draft" <?php echo (($scholarship['status'] ?? '') === 'draft') ? 'selected' : ''; ?>>
+                                Draft
                             </option>
                         </select>
                     </div>

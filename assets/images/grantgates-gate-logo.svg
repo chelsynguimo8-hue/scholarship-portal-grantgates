@@ -1,0 +1,33 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="14" x2="79" y2="83" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7E8"/>
+      <stop offset="0.48" stop-color="#F7EEFF"/>
+      <stop offset="1" stop-color="#EAF2FF"/>
+    </linearGradient>
+    <linearGradient id="pillars" x1="28" y1="25" x2="69" y2="73" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="0.42" stop-color="#EC4899"/>
+      <stop offset="1" stop-color="#4F46E5"/>
+    </linearGradient>
+    <linearGradient id="door" x1="38" y1="37" x2="58" y2="72" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#9333EA"/>
+    </linearGradient>
+  </defs>
+  <rect x="10" y="10" width="76" height="76" rx="26" fill="url(#bg)"/>
+  <rect x="14" y="14" width="68" height="68" rx="22" stroke="white" stroke-opacity="0.8" stroke-width="2"/>
+  <ellipse cx="48" cy="77" rx="18" ry="5" fill="#D9E6FF"/>
+  <path d="M26 34C26 23.5066 35.5066 15 46 15H50C60.4934 15 70 23.5066 70 34V35H26V34Z" fill="#0F172A"/>
+  <rect x="25" y="33" width="46" height="7" rx="3.5" fill="#0F172A"/>
+  <rect x="28" y="28" width="8" height="42" rx="4" fill="url(#pillars)"/>
+  <rect x="60" y="28" width="8" height="42" rx="4" fill="url(#pillars)"/>
+  <rect x="34" y="28" width="5" height="42" rx="2.5" fill="#FFE3A6" fill-opacity="0.75"/>
+  <rect x="57" y="28" width="5" height="42" rx="2.5" fill="#FFD2EB" fill-opacity="0.8"/>
+  <path d="M36 40C36 33.3726 41.3726 28 48 28C54.6274 28 60 33.3726 60 40V69H36V40Z" fill="#FCFCFF"/>
+  <path d="M40 69V48C40 43.5817 43.5817 40 48 40C52.4183 40 56 43.5817 56 48V69" fill="url(#door)"/>
+  <circle cx="52" cy="56" r="1.8" fill="#FFF7E8"/>
+  <path d="M23 72H73" stroke="#0F172A" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="30" cy="24" r="3" fill="#FFE8A3"/>
+  <circle cx="66" cy="22" r="2.5" fill="#FBCFE8"/>
+</svg>

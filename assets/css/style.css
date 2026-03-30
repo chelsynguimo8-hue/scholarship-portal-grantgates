@@ -75,17 +75,31 @@ body {
 /* ===== GRANTGATES BRAND STYLES ===== */
 .grantgates-brand {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
     text-decoration: none;
     line-height: 1.2;
     position: relative;
 }
 
+.brand-mark {
+    width: 30px;
+    height: 30px;
+    flex-shrink: 0;
+    filter: drop-shadow(0 12px 24px rgba(79, 70, 229, 0.16));
+}
+
+.brand-copy {
+    display: flex;
+    flex-direction: column;
+}
+
 .brand-line1 {
     font-family: 'Playfair Display', serif;
-    font-size: 2rem;
+    font-size: 1.65rem;
     font-weight: 800;
-    letter-spacing: 1px;
+    letter-spacing: 0.6px;
 }
 
 .brand-line1 .grant {
@@ -105,8 +119,8 @@ body {
 
 .brand-line2 {
     font-family: 'Montserrat', sans-serif;
-    font-size: 0.7rem;
-    letter-spacing: 3px;
+    font-size: 0.58rem;
+    letter-spacing: 2.2px;
     color: var(--gray-600);
     text-transform: uppercase;
     margin-top: 2px;
@@ -114,7 +128,7 @@ body {
 
 .brand-line3 {
     font-family: 'Inter', sans-serif;
-    font-size: 0.6rem;
+    font-size: 0.52rem;
     color: var(--gray-500);
     margin-top: 2px;
 }
@@ -143,13 +157,13 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 100px;
+    height: 78px;
 }
 
 .nav-menu {
     display: flex;
     list-style: none;
-    gap: 2rem;
+    gap: 1.35rem;
     align-items: center;
 }
 
@@ -157,7 +171,7 @@ header {
     text-decoration: none;
     color: var(--gray-700);
     font-weight: 500;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     transition: var(--transition);
     position: relative;
 }
@@ -190,11 +204,11 @@ header {
 /* ===== BUTTONS ===== */
 .btn {
     display: inline-block;
-    padding: 0.6rem 1.5rem;
+    padding: 0.5rem 1.2rem;
     border-radius: var(--radius-full);
     text-decoration: none;
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     transition: var(--transition);
     cursor: pointer;
     border: none;
@@ -690,8 +704,8 @@ footer {
     .navbar {
         flex-direction: column;
         height: auto;
-        gap: 1rem;
-        padding: 1rem 0;
+        gap: 0.75rem;
+        padding: 0.85rem 0;
     }
     
     .nav-menu {
@@ -710,5 +724,18 @@ footer {
     
     .auth-card {
         padding: 2rem;
+    }
+
+    .grantgates-brand {
+        gap: 0.5rem;
+    }
+
+    .brand-mark {
+        width: 26px;
+        height: 26px;
+    }
+
+    .brand-line1 {
+        font-size: 1.45rem;
     }
 }

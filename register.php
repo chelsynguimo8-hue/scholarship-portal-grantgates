@@ -41,22 +41,48 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             <form method="POST" action="">
                 <div class="form-group">
                     <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" required>
+                    <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" name="email" class="form-control" required>
+                    <input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">First Name</label>
-                    <input type="text" name="first_name" class="form-control" required>
+                    <input type="text" name="first_name" class="form-control" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>" required>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Last Name</label>
-                    <input type="text" name="last_name" class="form-control" required>
+                    <input type="text" name="last_name" class="form-control" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control" value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Institution</label>
+                    <input type="text" name="institution" class="form-control" value="<?php echo htmlspecialchars($_POST['institution'] ?? ''); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Program</label>
+                    <input type="text" name="program" class="form-control" value="<?php echo htmlspecialchars($_POST['program'] ?? ''); ?>">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Year of Study</label>
+                    <select name="year_of_study" class="form-control">
+                        <?php foreach (['1', '2', '3', '4', '5'] as $year): ?>
+                            <option value="<?php echo $year; ?>" <?php echo (($_POST['year_of_study'] ?? '1') === $year) ? 'selected' : ''; ?>>
+                                Year <?php echo $year; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 
                 <div class="form-group">

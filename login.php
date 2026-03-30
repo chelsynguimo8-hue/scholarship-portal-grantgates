@@ -49,7 +49,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             
             <div style="text-align: center; margin-top: 1.5rem;">
                 <p>Don't have an account? <a href="register.php" style="color: var(--gates-blue);">Register here</a></p>
-                <p><a href="forgot-password.php" style="color: var(--gray-600);">Forgot Password?</a></p>
+                <p><a href="<?php echo htmlspecialchars(url('forgot-password.php')); ?>" style="color: var(--gray-600);">Forgot Password?</a></p>
             </div>
         </form>
     </div>

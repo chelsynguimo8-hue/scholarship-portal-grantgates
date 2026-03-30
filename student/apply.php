@@ -4,13 +4,13 @@ require_once '../includes/config.php';
 require_once '../includes/auth.php';
 requireLogin();
 
+$user_id = (int) ($_SESSION['user_id'] ?? 0);
 $scholarship_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($scholarship_id <= 0) {
     die('Invalid scholarship selected.');
 }
 
-// Load scholarship from the real database
 $scholarship = null;
 $scholarship_sql = "
     SELECT scholarship_id, title, deadline, status
@@ -31,33 +31,51 @@ if (($scholarship['status'] ?? '') !== 'active') {
 }
 
 $page_title = 'Apply for Scholarship';
-$success = '';
 $error = '';
 
-$user_id = (int) ($_SESSION['user_id'] ?? 0);
-$full_name = $_SESSION['full_name'] ?? '';
-$email = $_SESSION['email'] ?? '';
-$institution = '';
-$program = '';
-$gpa = '';
+$user_result = mysqli_query($conn, "
+    SELECT first_name, last_name, email, institution, program, gpa, year_of_study
+    FROM users
+    WHERE user_id = $user_id
+    LIMIT 1
+");
+
+$user = $user_result && mysqli_num_rows($user_result) === 1
+    ? mysqli_fetch_assoc($user_result)
+    : [];
+
+$full_name = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+$email = $user['email'] ?? ($_SESSION['email'] ?? '');
+$institution = $user['institution'] ?? '';
+$program = $user['program'] ?? '';
+$gpa = isset($user['gpa']) ? (string) $user['gpa'] : '';
+$year_of_study = $user['year_of_study'] ?? '1';
+$remarks = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $full_name   = trim($_POST['full_name'] ?? '');
-    $email       = trim($_POST['email'] ?? '');
+    $full_name = trim($_POST['full_name'] ?? '');
+    $email = trim($_POST['email'] ?? '');
     $institution = trim($_POST['institution'] ?? '');
-    $program     = trim($_POST['program'] ?? '');
-    $gpa         = trim($_POST['gpa'] ?? '');
+    $program = trim($_POST['program'] ?? '');
+    $gpa = trim($_POST['gpa'] ?? '');
+    $year_of_study = trim($_POST['year_of_study'] ?? '1');
+    $remarks = trim($_POST['remarks'] ?? '');
+
+    if (!in_array($year_of_study, ['1', '2', '3', '4', '5'], true)) {
+        $year_of_study = '1';
+    }
 
     if ($full_name === '' || $email === '' || $institution === '' || $program === '' || $gpa === '') {
         $error = 'Please fill in all required fields.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
+    } elseif (!is_numeric($gpa) || (float) $gpa < 0 || (float) $gpa > 4.00) {
+        $error = 'Please enter a GPA between 0.00 and 4.00.';
     } elseif (!isset($_POST['confirm'])) {
         $error = 'Please confirm that the information is true and complete.';
     } elseif (!isset($_FILES['transcript']) || $_FILES['transcript']['error'] !== UPLOAD_ERR_OK) {
         $error = 'Please upload your academic transcript.';
     } else {
-        // Prevent duplicate applications
         $check_sql = "
             SELECT application_id
             FROM applications
@@ -70,25 +88,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($check_result && mysqli_num_rows($check_result) > 0) {
             $error = 'You have already applied for this scholarship.';
         } else {
-            // Insert into your real applications table
-            $insert_sql = "
-                INSERT INTO applications (user_id, scholarship_id, status)
-                VALUES ($user_id, $scholarship_id, 'pending')
+            $name_parts = preg_split('/\s+/', $full_name);
+            $first_name = mysqli_real_escape_string($conn, $name_parts[0] ?? '');
+            $last_name = mysqli_real_escape_string($conn, trim(implode(' ', array_slice($name_parts, 1))));
+            if ($last_name === '') {
+                $last_name = $first_name;
+            }
+
+            $email_escaped = mysqli_real_escape_string($conn, $email);
+            $institution_escaped = mysqli_real_escape_string($conn, $institution);
+            $program_escaped = mysqli_real_escape_string($conn, $program);
+            $gpa_escaped = mysqli_real_escape_string($conn, $gpa);
+            $remarks_escaped = mysqli_real_escape_string($conn, $remarks);
+
+            $update_user_sql = "
+                UPDATE users
+                SET
+                    first_name = '$first_name',
+                    last_name = '$last_name',
+                    email = '$email_escaped',
+                    institution = '$institution_escaped',
+                    program = '$program_escaped',
+                    gpa = '$gpa_escaped',
+                    year_of_study = '$year_of_study'
+                WHERE user_id = $user_id
+                LIMIT 1
             ";
 
-            if (mysqli_query($conn, $insert_sql)) {
-                // Optional: flash message (very useful)
-                $_SESSION['success_message'] = 'Application submitted successfully!';
-
-                // Redirect to dashboard
-                redirect('student/dashboard.php');
-
-                // Clear non-session fields after success
-                $institution = '';
-                $program = '';
-                $gpa = '';
+            if (!mysqli_query($conn, $update_user_sql)) {
+                $error = 'Failed to update your profile details: ' . mysqli_error($conn);
             } else {
-                $error = 'Database error: ' . mysqli_error($conn);
+                $insert_sql = "
+                    INSERT INTO applications (user_id, scholarship_id, status, remarks)
+                    VALUES ($user_id, $scholarship_id, 'pending', " . ($remarks === '' ? "NULL" : "'$remarks_escaped'") . ")
+                ";
+
+                if (mysqli_query($conn, $insert_sql)) {
+                    $application_id = (int) mysqli_insert_id($conn);
+                    $upload_dir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'documents';
+
+                    if (!is_dir($upload_dir)) {
+                        mkdir($upload_dir, 0777, true);
+                    }
+
+                    $files_to_process = [
+                        'transcript' => true,
+                        'letter' => false,
+                    ];
+
+                    foreach ($files_to_process as $field => $required) {
+                        if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
+                            if ($required) {
+                                $error = 'A required document is missing.';
+                            }
+                            continue;
+                        }
+
+                        if ($_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
+                            $error = 'Failed to upload ' . $field . '.';
+                            break;
+                        }
+
+                        $original_name = basename($_FILES[$field]['name']);
+                        $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
+                        $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+                        if (!in_array($extension, $allowed_extensions, true)) {
+                            $error = 'Only PDF, JPG, JPEG, and PNG files are allowed.';
+                            break;
+                        }
+
+                        $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', $original_name);
+                        $target_name = $application_id . '_' . $field . '_' . time() . '_' . $safe_name;
+                        $target_path = $upload_dir . DIRECTORY_SEPARATOR . $target_name;
+
+                        if (!move_uploaded_file($_FILES[$field]['tmp_name'], $target_path)) {
+                            $error = 'Unable to save uploaded file.';
+                            break;
+                        }
+
+                        $db_file_name = mysqli_real_escape_string($conn, $original_name);
+                        $db_file_path = mysqli_real_escape_string($conn, 'uploads/documents/' . $target_name);
+                        $db_file_type = mysqli_real_escape_string($conn, $_FILES[$field]['type'] ?: strtoupper($extension));
+
+                        $document_sql = "
+                            INSERT INTO documents (application_id, file_name, file_path, file_type)
+                            VALUES ($application_id, '$db_file_name', '$db_file_path', '$db_file_type')
+                        ";
+
+                        if (!mysqli_query($conn, $document_sql)) {
+                            $error = 'Application saved, but file metadata could not be recorded.';
+                            break;
+                        }
+                    }
+
+                    if ($error === '') {
+                        refreshCurrentUserSession();
+                        $_SESSION['success_message'] = 'Application submitted successfully!';
+                        redirect('student/dashboard.php');
+                    }
+
+                    mysqli_query($conn, "DELETE FROM applications WHERE application_id = $application_id LIMIT 1");
+                } else {
+                    $error = 'Database error: ' . mysqli_error($conn);
+                }
             }
         }
     }
@@ -112,12 +215,6 @@ include '../includes/header.php';
             </div>
 
             <div class="card-body">
-                <?php if ($success): ?>
-                    <div class="alert alert-success" style="margin-bottom: 1rem;">
-                        <?php echo $success; ?>
-                    </div>
-                <?php endif; ?>
-
                 <?php if ($error): ?>
                     <div class="alert alert-error" style="margin-bottom: 1rem;">
                         <?php echo $error; ?>
@@ -181,12 +278,35 @@ include '../includes/header.php';
                             <input
                                     type="number"
                                     step="0.01"
+                                    min="0"
+                                    max="4"
                                     name="gpa"
                                     class="form-control"
                                     value="<?php echo htmlspecialchars($gpa); ?>"
                                     required
                             >
                         </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Year of Study *</label>
+                        <select name="year_of_study" class="form-control" required>
+                            <?php foreach (['1', '2', '3', '4', '5'] as $year): ?>
+                                <option value="<?php echo $year; ?>" <?php echo $year_of_study === $year ? 'selected' : ''; ?>>
+                                    Year <?php echo $year; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Application Remarks</label>
+                        <textarea
+                                name="remarks"
+                                class="form-control"
+                                rows="4"
+                                placeholder="Share a short note about your goals or motivation."
+                        ><?php echo htmlspecialchars($remarks); ?></textarea>
                     </div>
 
                     <h4 class="mb-4 mt-6">Required Documents</h4>

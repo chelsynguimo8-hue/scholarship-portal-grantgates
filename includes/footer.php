@@ -15,10 +15,10 @@
                 <div class="footer-section">
                     <h4>Quick Links</h4>
                     <ul>
-                        <li><a href="about.php">About Us</a></li>
-                        <li><a href="scholarships.php">Scholarships</a></li>
-                        <li><a href="contact.php">Contact</a></li>
-                        <li><a href="privacy.php">Privacy Policy</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('about.php')); ?>">About Us</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('scholarships.php')); ?>">Scholarships</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('contact.php')); ?>">Contact</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('privacy.php')); ?>">Privacy Policy</a></li>
                     </ul>
                 </div>
                 

@@ -16,6 +16,7 @@ $success = '';
 // Handle status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $new_status = trim($_POST['status'] ?? '');
+    $remarks = trim($_POST['remarks'] ?? '');
 
     $allowed_statuses = ['pending', 'under_review', 'approved', 'rejected'];
 
@@ -23,10 +24,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid status selected.';
     } else {
         $new_status_escaped = mysqli_real_escape_string($conn, $new_status);
+        $remarks_escaped = mysqli_real_escape_string($conn, $remarks);
+        $reviewer_id = (int) ($_SESSION['user_id'] ?? 0);
 
         $update_sql = "
             UPDATE applications
-            SET status = '$new_status_escaped'
+            SET
+                status = '$new_status_escaped',
+                remarks = " . ($remarks === '' ? "NULL" : "'$remarks_escaped'") . ",
+                reviewed_by = " . ($reviewer_id > 0 ? $reviewer_id : "NULL") . ",
+                reviewed_date = NOW()
             WHERE application_id = $application_id
             LIMIT 1
         ";
@@ -46,12 +53,20 @@ $application_sql = "
         a.application_id,
         a.application_date,
         a.status,
+        a.remarks,
+        a.reviewed_by,
+        a.reviewed_date,
         a.user_id,
         a.scholarship_id,
         u.username,
         u.email,
         u.first_name,
         u.last_name,
+        u.phone,
+        u.institution AS student_institution,
+        u.program AS student_program,
+        u.gpa AS student_gpa,
+        u.year_of_study,
         s.title AS scholarship_title,
         s.description AS scholarship_description,
         s.eligibility,
@@ -124,6 +139,26 @@ include '../includes/header.php';
                         <td><?php echo htmlspecialchars($application['email'] ?? 'N/A'); ?></td>
                     </tr>
                     <tr>
+                        <th>Phone</th>
+                        <td><?php echo htmlspecialchars($application['phone'] ?? 'N/A'); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Institution</th>
+                        <td><?php echo htmlspecialchars($application['student_institution'] ?? 'N/A'); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Program</th>
+                        <td><?php echo htmlspecialchars($application['student_program'] ?? 'N/A'); ?></td>
+                    </tr>
+                    <tr>
+                        <th>GPA</th>
+                        <td><?php echo $application['student_gpa'] !== null ? htmlspecialchars((string) $application['student_gpa']) : 'N/A'; ?></td>
+                    </tr>
+                    <tr>
+                        <th>Year of Study</th>
+                        <td><?php echo htmlspecialchars($application['year_of_study'] ?? 'N/A'); ?></td>
+                    </tr>
+                    <tr>
                         <th>Scholarship</th>
                         <td><?php echo htmlspecialchars($application['scholarship_title'] ?? 'N/A'); ?></td>
                     </tr>
@@ -177,6 +212,20 @@ include '../includes/header.php';
                             </span>
                         </td>
                     </tr>
+                    <tr>
+                        <th>Reviewer Remarks</th>
+                        <td><?php echo nl2br(htmlspecialchars($application['remarks'] ?? 'No remarks added yet.')); ?></td>
+                    </tr>
+                    <tr>
+                        <th>Reviewed Date</th>
+                        <td>
+                            <?php
+                            echo !empty($application['reviewed_date'])
+                                ? htmlspecialchars(date('F d, Y H:i', strtotime($application['reviewed_date'])))
+                                : 'Not reviewed yet';
+                            ?>
+                        </td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -212,6 +261,11 @@ include '../includes/header.php';
                         <option value="approved" <?php echo ($application['status'] === 'approved') ? 'selected' : ''; ?>>Approved</option>
                         <option value="rejected" <?php echo ($application['status'] === 'rejected') ? 'selected' : ''; ?>>Rejected</option>
                     </select>
+                </div>
+
+                <div class="form-group" style="max-width: 640px;">
+                    <label for="remarks" class="form-label">Reviewer Remarks</label>
+                    <textarea name="remarks" id="remarks" class="form-control" rows="4"><?php echo htmlspecialchars($application['remarks'] ?? ''); ?></textarea>
                 </div>
 
                 <div style="display: flex; gap: 1rem; flex-wrap: wrap;">

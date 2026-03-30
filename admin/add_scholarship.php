@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $deadline = trim($_POST['deadline'] ?? '');
     $status = trim($_POST['status'] ?? 'active');
 
-    $allowed_statuses = ['active', 'expired'];
+    $allowed_statuses = ['active', 'expired', 'draft'];
 
     if ($title === '' || $description === '' || $eligibility === '' || $amount === '' || $deadline === '') {
         $error = 'Please fill in all required fields.';
@@ -40,15 +40,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $deadline_escaped = mysqli_real_escape_string($conn, $deadline);
         $status_escaped = mysqli_real_escape_string($conn, $status);
 
+        $created_by = (int) ($_SESSION['user_id'] ?? 0);
+
         $query = "
-            INSERT INTO scholarships (title, description, eligibility, amount, deadline, status)
+            INSERT INTO scholarships (title, description, eligibility, amount, deadline, status, created_by)
             VALUES (
                 '$title_escaped',
                 '$description_escaped',
                 '$eligibility_escaped',
                 '$amount_escaped',
                 '$deadline_escaped',
-                '$status_escaped'
+                '$status_escaped',
+                " . ($created_by > 0 ? $created_by : "NULL") . "
             )
         ";
 
@@ -156,6 +159,7 @@ include '../includes/header.php';
                             <select id="status" name="status" class="form-control" required>
                                 <option value="active" <?php echo $status === 'active' ? 'selected' : ''; ?>>Active</option>
                                 <option value="expired" <?php echo $status === 'expired' ? 'selected' : ''; ?>>Expired</option>
+                                <option value="draft" <?php echo $status === 'draft' ? 'selected' : ''; ?>>Draft</option>
                             </select>
                         </div>
                     </div>

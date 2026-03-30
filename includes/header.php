@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo isset($page_title) ? $page_title . ' - ' : ''; ?>GrantGates</title>
 
-    <link rel="stylesheet" href="/scholarship/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo htmlspecialchars(asset('assets/css/style.css')); ?>">
 
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
@@ -27,30 +27,34 @@
 <header>
     <div class="container">
         <nav class="navbar">
-            <a href="/scholarship/index.php" class="grantgates-brand">
-                <div class="brand-line1">
-                    <span class="grant">Grant</span><span class="gates">Gates</span>
+            <a href="<?php echo htmlspecialchars(url('index.php')); ?>" class="grantgates-brand">
+                <img src="<?php echo htmlspecialchars(asset('assets/images/grantgates-gate-logo.svg')); ?>" alt="GrantGates logo" class="brand-mark">
+                <div class="brand-copy">
+                    <div class="brand-line1">
+                        <span class="grant">Grant</span><span class="gates">Gates</span>
+                    </div>
+                    <div class="brand-line2">OPENING DOORS TO YOUR FUTURE</div>
+                    <div class="brand-line3">www.grantgates.com</div>
                 </div>
-                <div class="brand-line2">OPENING DOORS TO YOUR FUTURE</div>
-                <div class="brand-line3">www.grantgates.com</div>
             </a>
 
             <ul class="nav-menu">
-                <li><a href="/scholarship/index.php">Home</a></li>
-                <li><a href="/scholarship/scholarships.php">Scholarships</a></li>
-                <li><a href="/scholarship/about.php">About</a></li>
-                <li><a href="/scholarship/contact.php">Contact</a></li>
+                <li><a href="<?php echo htmlspecialchars(url('index.php')); ?>">Home</a></li>
+                <li><a href="<?php echo htmlspecialchars(url('scholarships.php')); ?>">Scholarships</a></li>
+                <li><a href="<?php echo htmlspecialchars(url('about.php')); ?>">About</a></li>
+                <li><a href="<?php echo htmlspecialchars(url('contact.php')); ?>">Contact</a></li>
 
                 <?php if (isset($_SESSION['user_id'])): ?>
                     <?php if ($_SESSION['role'] == 'admin'): ?>
-                        <li><a href="/scholarship/admin/dashboard.php">Dashboard</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('admin/dashboard.php')); ?>">Dashboard</a></li>
                     <?php else: ?>
-                        <li><a href="/scholarship/student/dashboard.php">Dashboard</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('student/dashboard.php')); ?>">Dashboard</a></li>
+                        <li><a href="<?php echo htmlspecialchars(url('student/profile.php')); ?>">Profile</a></li>
                     <?php endif; ?>
-                    <li><a href="/scholarship/logout.php" class="btn btn-outline">Logout</a></li>
+                    <li><a href="<?php echo htmlspecialchars(url('logout.php')); ?>" class="btn btn-outline">Logout</a></li>
                 <?php else: ?>
-                    <li><a href="/scholarship/login.php" class="btn btn-outline">Login</a></li>
-                    <li><a href="/scholarship/register.php" class="btn btn-primary">Register</a></li>
+                    <li><a href="<?php echo htmlspecialchars(url('login.php')); ?>" class="btn btn-outline">Login</a></li>
+                    <li><a href="<?php echo htmlspecialchars(url('register.php')); ?>" class="btn btn-primary">Register</a></li>
                 <?php endif; ?>
             </ul>
         </nav>

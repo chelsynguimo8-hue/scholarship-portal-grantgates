@@ -77,6 +77,15 @@ include '../includes/header.php';
         <h1>Welcome, <?php echo htmlspecialchars($full_name); ?>!</h1>
         <p style="color: var(--gray-600); margin-bottom: 2rem;">Your scholarship journey starts here</p>
 
+        <?php if (isset($_SESSION['success_message'])): ?>
+            <div class="alert alert-success" style="margin-bottom: 1rem;">
+                <?php
+                echo htmlspecialchars($_SESSION['success_message']);
+                unset($_SESSION['success_message']);
+                ?>
+            </div>
+        <?php endif; ?>
+
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
@@ -103,6 +112,7 @@ include '../includes/header.php';
         <!-- Quick Actions -->
         <div style="margin-bottom: 2rem;">
             <a href="../scholarships.php" class="btn btn-primary">+ Browse Scholarships</a>
+            <a href="profile.php" class="btn btn-outline">Update Profile</a>
         </div>
 
         <!-- My Applications -->
