@@ -1,7 +1,8 @@
-<?php
+﻿<?php
 // student/apply.php
 require_once '../includes/config.php';
 require_once '../includes/auth.php';
+require_once '../includes/upload_helpers.php';
 requireLogin();
 
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
@@ -73,8 +74,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Please enter a GPA between 0.00 and 4.00.';
     } elseif (!isset($_POST['confirm'])) {
         $error = 'Please confirm that the information is true and complete.';
-    } elseif (!isset($_FILES['transcript']) || $_FILES['transcript']['error'] !== UPLOAD_ERR_OK) {
-        $error = 'Please upload your academic transcript.';
     } else {
         $check_sql = "
             SELECT application_id
@@ -127,53 +126,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $application_id = (int) mysqli_insert_id($conn);
                     $upload_dir = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'documents';
 
-                    if (!is_dir($upload_dir)) {
-                        mkdir($upload_dir, 0777, true);
-                    }
-
                     $files_to_process = [
-                        'transcript' => true,
-                        'letter' => false,
+                        'transcript' => [
+                            'required' => true,
+                            'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png'],
+                            'label' => 'Academic Transcript',
+                        ],
+                        'id_card' => [
+                            'required' => true,
+                            'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png'],
+                            'label' => 'Student ID Card',
+                        ],
+                        'cv' => [
+                            'required' => true,
+                            'allowed_extensions' => ['pdf', 'doc', 'docx'],
+                            'label' => 'Curriculum Vitae',
+                        ],
+                        'letter' => [
+                            'required' => false,
+                            'allowed_extensions' => ['pdf', 'jpg', 'jpeg', 'png'],
+                            'label' => 'Recommendation Letter',
+                        ],
                     ];
+                    $saved_files = [];
 
-                    foreach ($files_to_process as $field => $required) {
-                        if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
-                            if ($required) {
-                                $error = 'A required document is missing.';
+                    foreach ($files_to_process as $field => $config) {
+                        if (!isset($_FILES[$field]) || (int) $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
+                            if ($config['required']) {
+                                $error = $config['label'] . ' is required.';
                             }
                             continue;
                         }
 
-                        if ($_FILES[$field]['error'] !== UPLOAD_ERR_OK) {
-                            $error = 'Failed to upload ' . $field . '.';
+                        $upload = uploadFileFromField(
+                            $field,
+                            $upload_dir,
+                            'uploads/documents',
+                            $config['allowed_extensions'],
+                            5 * 1024 * 1024,
+                            (string) $application_id,
+                            $error
+                        );
+
+                        if ($upload === null) {
                             break;
                         }
 
-                        $original_name = basename($_FILES[$field]['name']);
-                        $extension = strtolower(pathinfo($original_name, PATHINFO_EXTENSION));
-                        $allowed_extensions = ['pdf', 'jpg', 'jpeg', 'png'];
-
-                        if (!in_array($extension, $allowed_extensions, true)) {
-                            $error = 'Only PDF, JPG, JPEG, and PNG files are allowed.';
-                            break;
-                        }
-
-                        $safe_name = preg_replace('/[^A-Za-z0-9._-]/', '_', $original_name);
-                        $target_name = $application_id . '_' . $field . '_' . time() . '_' . $safe_name;
-                        $target_path = $upload_dir . DIRECTORY_SEPARATOR . $target_name;
-
-                        if (!move_uploaded_file($_FILES[$field]['tmp_name'], $target_path)) {
-                            $error = 'Unable to save uploaded file.';
-                            break;
-                        }
-
-                        $db_file_name = mysqli_real_escape_string($conn, $original_name);
-                        $db_file_path = mysqli_real_escape_string($conn, 'uploads/documents/' . $target_name);
-                        $db_file_type = mysqli_real_escape_string($conn, $_FILES[$field]['type'] ?: strtoupper($extension));
+                        $saved_files[] = $upload['absolute_path'];
+                        $db_file_name = mysqli_real_escape_string($conn, $upload['original_name']);
+                        $db_file_path = mysqli_real_escape_string($conn, $upload['relative_path']);
+                        $db_file_type = mysqli_real_escape_string($conn, $upload['mime_type']);
+                        $db_category = mysqli_real_escape_string($conn, $field);
 
                         $document_sql = "
-                            INSERT INTO documents (application_id, file_name, file_path, file_type)
-                            VALUES ($application_id, '$db_file_name', '$db_file_path', '$db_file_type')
+                            INSERT INTO documents (application_id, file_name, file_path, file_type, document_category)
+                            VALUES ($application_id, '$db_file_name', '$db_file_path', '$db_file_type', '$db_category')
                         ";
 
                         if (!mysqli_query($conn, $document_sql)) {
@@ -188,6 +195,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         redirect('student/dashboard.php');
                     }
 
+                    foreach ($saved_files as $saved_file) {
+                        if (is_file($saved_file)) {
+                            unlink($saved_file);
+                        }
+                    }
+
+                    mysqli_query($conn, "DELETE FROM documents WHERE application_id = $application_id");
                     mysqli_query($conn, "DELETE FROM applications WHERE application_id = $application_id LIMIT 1");
                 } else {
                     $error = 'Database error: ' . mysqli_error($conn);
@@ -316,7 +330,7 @@ include '../includes/header.php';
                         <div class="file-input-wrapper">
                             <input type="file" id="transcript" name="transcript" accept=".pdf,.jpg,.png" required>
                             <label for="transcript" class="file-input-label">
-                                <span>📎</span>
+                                <span>ðŸ“Ž</span>
                                 <span>Choose file or drag here</span>
                             </label>
                         </div>
@@ -328,7 +342,7 @@ include '../includes/header.php';
                         <div class="file-input-wrapper">
                             <input type="file" id="letter" name="letter" accept=".pdf">
                             <label for="letter" class="file-input-label">
-                                <span>📎</span>
+                                <span>ðŸ“Ž</span>
                                 <span>Choose file or drag here</span>
                             </label>
                         </div>
@@ -361,3 +375,4 @@ include '../includes/header.php';
     </style>
 
 <?php include '../includes/footer.php'; ?>
+

@@ -9,6 +9,7 @@ function syncSessionUser(array $user)
     $_SESSION['role'] = $user['role'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['full_name'] = trim(($user['first_name'] ?? '') . ' ' . ($user['last_name'] ?? ''));
+    $_SESSION['profile_picture_path'] = $user['profile_picture_path'] ?? null;
 }
 
 // Register new user

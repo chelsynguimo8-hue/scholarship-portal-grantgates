@@ -1,6 +1,7 @@
 <?php
 require_once '../includes/config.php';
 require_once '../includes/auth.php';
+require_once '../includes/upload_helpers.php';
 requireLogin();
 
 $page_title = 'My Profile';
@@ -27,6 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $program = mysqli_real_escape_string($conn, trim($_POST['program'] ?? ''));
     $gpa = trim($_POST['gpa'] ?? '');
     $year_of_study = trim($_POST['year_of_study'] ?? '1');
+    $profile_picture_path = $profile['profile_picture_path'] ?? null;
+    $new_profile_picture_absolute = null;
 
     if ($username === '' || $email === '' || $first_name === '' || $last_name === '') {
         $error = 'Please fill in all required fields.';
@@ -51,12 +54,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($check_result && mysqli_num_rows($check_result) > 0) {
             $error = 'That email or username is already in use.';
         } else {
+            if (isset($_FILES['profile_picture']) && (int) ($_FILES['profile_picture']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $upload = uploadFileFromField(
+                    'profile_picture',
+                    dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . 'profile_pictures',
+                    'uploads/profile_pictures',
+                    ['jpg', 'jpeg', 'png', 'webp'],
+                    3 * 1024 * 1024,
+                    (string) $user_id,
+                    $error
+                );
+
+                if ($upload !== null) {
+                    $profile_picture_path = $upload['relative_path'];
+                    $new_profile_picture_absolute = $upload['absolute_path'];
+                }
+            }
+
+            if ($error !== '') {
+                goto render_profile;
+            }
+
             $phone_sql = $phone === '' ? 'NULL' : "'$phone'";
             $address_sql = $address === '' ? 'NULL' : "'$address'";
             $dob_sql = $date_of_birth === '' ? 'NULL' : "'" . mysqli_real_escape_string($conn, $date_of_birth) . "'";
             $institution_sql = $institution === '' ? 'NULL' : "'$institution'";
             $program_sql = $program === '' ? 'NULL' : "'$program'";
             $gpa_sql = $gpa === '' ? 'NULL' : "'" . mysqli_real_escape_string($conn, $gpa) . "'";
+            $picture_sql = $profile_picture_path === null || $profile_picture_path === ''
+                ? 'NULL'
+                : "'" . mysqli_real_escape_string($conn, $profile_picture_path) . "'";
 
             $update_sql = "
                 UPDATE users
@@ -71,23 +98,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     institution = $institution_sql,
                     program = $program_sql,
                     gpa = $gpa_sql,
-                    year_of_study = '$year_of_study'
+                    year_of_study = '$year_of_study',
+                    profile_picture_path = $picture_sql
                 WHERE user_id = $user_id
                 LIMIT 1
             ";
 
             if (mysqli_query($conn, $update_sql)) {
+                if ($new_profile_picture_absolute !== null && !empty($profile['profile_picture_path'])) {
+                    $old_picture_absolute = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $profile['profile_picture_path']);
+                    if (is_file($old_picture_absolute)) {
+                        unlink($old_picture_absolute);
+                    }
+                }
+
                 refreshCurrentUserSession();
                 $success = 'Profile updated successfully.';
                 $profile_result = mysqli_query($conn, "SELECT * FROM users WHERE user_id = $user_id LIMIT 1");
                 $profile = mysqli_fetch_assoc($profile_result);
             } else {
+                if ($new_profile_picture_absolute !== null && is_file($new_profile_picture_absolute)) {
+                    unlink($new_profile_picture_absolute);
+                }
                 $error = 'Failed to update profile: ' . mysqli_error($conn);
             }
         }
     }
 }
 
+render_profile:
 include '../includes/header.php';
 ?>
 
@@ -109,8 +148,25 @@ include '../includes/header.php';
     <?php endif; ?>
 
     <div class="card">
-        <form method="POST">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+        <form method="POST" enctype="multipart/form-data">
+            <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                <div style="min-width: 180px; text-align: center;">
+                    <?php if (!empty($profile['profile_picture_path'])): ?>
+                        <img src="../<?php echo htmlspecialchars($profile['profile_picture_path']); ?>" alt="Profile picture" style="width: 140px; height: 140px; object-fit: cover; border-radius: 50%; border: 4px solid rgba(67, 97, 238, 0.15);">
+                    <?php else: ?>
+                        <div style="width: 140px; height: 140px; border-radius: 50%; background: #eef2ff; color: #4361ee; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; margin: 0 auto;">
+                            <?php echo htmlspecialchars(strtoupper(substr((string) ($profile['first_name'] ?? 'S'), 0, 1))); ?>
+                        </div>
+                    <?php endif; ?>
+
+                    <div class="form-group" style="margin-top: 1rem; text-align: left;">
+                        <label class="form-label">Profile Picture</label>
+                        <input type="file" name="profile_picture" class="form-control" accept=".jpg,.jpeg,.png,.webp">
+                        <small class="form-text">JPG, JPEG, PNG, or WEBP up to 3MB</small>
+                    </div>
+                </div>
+
+                <div style="flex: 1; min-width: 260px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
                 <div class="form-group">
                     <label class="form-label">Username *</label>
                     <input type="text" name="username" class="form-control" value="<?php echo htmlspecialchars($profile['username'] ?? ''); ?>" required>
@@ -157,6 +213,7 @@ include '../includes/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
+            </div>
             </div>
 
             <div class="form-group" style="margin-top: 1rem;">

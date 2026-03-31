@@ -22,6 +22,7 @@ CREATE TABLE users (
     program VARCHAR(100),
     gpa DECIMAL(3,2),
     year_of_study ENUM('1', '2', '3', '4', '5') DEFAULT '1',
+    profile_picture_path VARCHAR(500) DEFAULT NULL,
     role ENUM('student', 'admin') DEFAULT 'student',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -61,6 +62,7 @@ CREATE TABLE documents (
     file_name VARCHAR(255) NOT NULL,
     file_path VARCHAR(500) NOT NULL,
     file_type VARCHAR(50) NOT NULL,
+    document_category VARCHAR(50) NOT NULL DEFAULT 'supporting_document',
     upload_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (application_id) REFERENCES applications(application_id) ON DELETE CASCADE
 );

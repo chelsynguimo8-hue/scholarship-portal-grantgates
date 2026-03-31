@@ -33,7 +33,7 @@ if (!$application_result || mysqli_num_rows($application_result) === 0) {
 $application = mysqli_fetch_assoc($application_result);
 $documents = [];
 $documents_result = mysqli_query($conn, "
-    SELECT file_name, file_path, file_type, upload_date
+    SELECT file_name, file_path, file_type, document_category, upload_date
     FROM documents
     WHERE application_id = $application_id
     ORDER BY upload_date DESC
@@ -81,6 +81,18 @@ include '../includes/header.php';
             <ul style="margin: 0; padding-left: 1rem;">
                 <?php foreach ($documents as $document): ?>
                     <li style="margin-bottom: 0.75rem;">
+                        <strong>
+                            <?php
+                            $category_labels = [
+                                'transcript' => 'Academic Transcript',
+                                'id_card' => 'Student ID Card',
+                                'cv' => 'Curriculum Vitae',
+                                'letter' => 'Recommendation Letter',
+                            ];
+                            echo htmlspecialchars($category_labels[$document['document_category'] ?? ''] ?? 'Supporting Document');
+                            ?>
+                            :
+                        </strong>
                         <a href="../<?php echo htmlspecialchars($document['file_path']); ?>" target="_blank" rel="noopener noreferrer">
                             <?php echo htmlspecialchars($document['file_name']); ?>
                         </a>

@@ -8,6 +8,7 @@ $page_title = 'Student Dashboard';
 
 $user_id = (int) ($_SESSION['user_id'] ?? 0);
 $full_name = $_SESSION['full_name'] ?? 'Student';
+$profile_picture_path = $_SESSION['profile_picture_path'] ?? null;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,8 +75,20 @@ include '../includes/header.php';
 ?>
 
     <div class="container" style="padding: 40px 0;">
-        <h1>Welcome, <?php echo htmlspecialchars($full_name); ?>!</h1>
-        <p style="color: var(--gray-600); margin-bottom: 2rem;">Your scholarship journey starts here</p>
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <?php if (!empty($profile_picture_path)): ?>
+                <img src="../<?php echo htmlspecialchars($profile_picture_path); ?>" alt="Profile picture" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 4px solid rgba(67, 97, 238, 0.15);">
+            <?php else: ?>
+                <div style="width: 72px; height: 72px; border-radius: 50%; background: #eef2ff; color: #4361ee; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700;">
+                    <?php echo htmlspecialchars(strtoupper(substr($full_name, 0, 1))); ?>
+                </div>
+            <?php endif; ?>
+
+            <div>
+                <h1 style="margin-bottom: 0.35rem;">Welcome, <?php echo htmlspecialchars($full_name); ?>!</h1>
+                <p style="color: var(--gray-600); margin: 0;">Your scholarship journey starts here</p>
+            </div>
+        </div>
 
         <?php if (isset($_SESSION['success_message'])): ?>
             <div class="alert alert-success" style="margin-bottom: 1rem;">

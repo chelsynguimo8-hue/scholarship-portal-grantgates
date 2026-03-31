@@ -63,6 +63,7 @@ $application_sql = "
         u.first_name,
         u.last_name,
         u.phone,
+        u.profile_picture_path,
         u.institution AS student_institution,
         u.program AS student_program,
         u.gpa AS student_gpa,
@@ -87,6 +88,19 @@ if (!$application_result || mysqli_num_rows($application_result) === 0) {
 }
 
 $application = mysqli_fetch_assoc($application_result);
+$documents = [];
+$documents_result = mysqli_query($conn, "
+    SELECT file_name, file_path, file_type, document_category, upload_date
+    FROM documents
+    WHERE application_id = $application_id
+    ORDER BY upload_date DESC
+");
+
+if ($documents_result) {
+    while ($row = mysqli_fetch_assoc($documents_result)) {
+        $documents[] = $row;
+    }
+}
 
 $page_title = 'Review Application';
 include '../includes/header.php';
@@ -123,6 +137,11 @@ include '../includes/header.php';
                     <tr>
                         <th>Student Name</th>
                         <td>
+                            <?php if (!empty($application['profile_picture_path'])): ?>
+                                <div style="margin-bottom: 0.75rem;">
+                                    <img src="../<?php echo htmlspecialchars($application['profile_picture_path']); ?>" alt="Student profile picture" style="width: 72px; height: 72px; object-fit: cover; border-radius: 50%; border: 3px solid rgba(67, 97, 238, 0.15);">
+                                </div>
+                            <?php endif; ?>
                             <?php
                             echo htmlspecialchars(
                                 trim(($application['first_name'] ?? '') . ' ' . ($application['last_name'] ?? ''))
@@ -229,6 +248,39 @@ include '../includes/header.php';
                     </tbody>
                 </table>
             </div>
+        </div>
+
+        <div class="card" style="margin-bottom: 2rem;">
+            <h3 style="margin-bottom: 1rem;">Supporting Documents</h3>
+
+            <?php if (count($documents) > 0): ?>
+                <ul style="margin: 0 0 1.5rem 0; padding-left: 1rem;">
+                    <?php foreach ($documents as $document): ?>
+                        <li style="margin-bottom: 0.75rem;">
+                            <strong>
+                                <?php
+                                $category_labels = [
+                                    'transcript' => 'Academic Transcript',
+                                    'id_card' => 'Student ID Card',
+                                    'cv' => 'Curriculum Vitae',
+                                    'letter' => 'Recommendation Letter',
+                                ];
+                                echo htmlspecialchars($category_labels[$document['document_category'] ?? ''] ?? 'Supporting Document');
+                                ?>
+                                :
+                            </strong>
+                            <a href="../<?php echo htmlspecialchars($document['file_path']); ?>" target="_blank" rel="noopener noreferrer">
+                                <?php echo htmlspecialchars($document['file_name']); ?>
+                            </a>
+                            <span style="color: var(--gray-600);">
+                                (<?php echo htmlspecialchars($document['file_type']); ?>, <?php echo htmlspecialchars(date('F d, Y H:i', strtotime($document['upload_date']))); ?>)
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php else: ?>
+                <p style="color: var(--gray-600); margin-top: 0;">No uploaded documents found.</p>
+            <?php endif; ?>
         </div>
 
         <div class="card" style="margin-bottom: 2rem;">
