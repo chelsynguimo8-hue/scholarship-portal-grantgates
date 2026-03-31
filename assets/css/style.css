@@ -76,18 +76,10 @@ body {
 .grantgates-brand {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 0.6rem;
+    align-items: flex-start;
     text-decoration: none;
     line-height: 1.2;
     position: relative;
-}
-
-.brand-mark {
-    width: 30px;
-    height: 30px;
-    flex-shrink: 0;
-    filter: drop-shadow(0 12px 24px rgba(79, 70, 229, 0.16));
 }
 
 .brand-copy {
@@ -724,15 +716,6 @@ footer {
     
     .auth-card {
         padding: 2rem;
-    }
-
-    .grantgates-brand {
-        gap: 0.5rem;
-    }
-
-    .brand-mark {
-        width: 26px;
-        height: 26px;
     }
 
     .brand-line1 {

@@ -28,7 +28,6 @@
     <div class="container">
         <nav class="navbar">
             <a href="<?php echo htmlspecialchars(url('index.php')); ?>" class="grantgates-brand">
-                <img src="<?php echo htmlspecialchars(asset('assets/images/grantgates-gate-logo.svg')); ?>" alt="GrantGates logo" class="brand-mark">
                 <div class="brand-copy">
                     <div class="brand-line1">
                         <span class="grant">Grant</span><span class="gates">Gates</span>
